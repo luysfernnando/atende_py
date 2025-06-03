@@ -10,7 +10,7 @@ Aplicação principal do chatbot seguindo princípios SOLID e KISS
 
 import os
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, render_template, send_from_directory
 from src.database.database_manager import DatabaseManager
 from src.database.consulta_repository import ConsultaRepository
 from src.database.conversa_repository import ConversaRepository
@@ -56,6 +56,15 @@ def create_app() -> Flask:
 def register_routes(app: Flask, chatbot_controller: ChatbotController, whatsapp_controller: WhatsAppController = None):
     """Registra todas as rotas da aplicação"""
     
+    # Rota para o dashboard web
+    @app.route('/')
+    def dashboard():
+        return render_template('dashboard.html')
+    
+    @app.route('/static/<path:filename>')
+    def static_files(filename):
+        return send_from_directory('static', filename)
+    
     # Rotas do chatbot (API REST)
     @app.route('/mensagem', methods=['POST'])
     def mensagem():
@@ -89,6 +98,16 @@ def register_routes(app: Flask, chatbot_controller: ChatbotController, whatsapp_
     def health_check():
         return {'status': 'ok', 'message': 'Chatbot funcionando!'}
     
+    # Nova rota para fornecer configurações do .env
+    @app.route('/config', methods=['GET'])
+    def get_config():
+        """Retorna configurações atuais (sem dados sensíveis)"""
+        return {
+            'twilio_sid': os.getenv('TWILIO_ACCOUNT_SID', ''),
+            'whatsapp_number': os.getenv('TWILIO_PHONE_NUMBER', ''),
+            'has_token': bool(os.getenv('TWILIO_AUTH_TOKEN'))
+        }
+    
     # Rotas do WhatsApp (se configurado)
     if whatsapp_controller:
         @app.route('/webhook/whatsapp', methods=['POST'])
@@ -113,6 +132,7 @@ if __name__ == '__main__':
     print("• POST /conversa/reiniciar/<user_id> - Reiniciar conversa")
     print("• GET /estatisticas - Estatísticas do sistema")
     print("• GET /health - Health check")
+    print("• GET /config - Obter configurações atuais")
     
     # Mostra endpoints do WhatsApp se configurado
     if os.getenv('TWILIO_ACCOUNT_SID'):

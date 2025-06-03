@@ -9,6 +9,7 @@ import json
 from typing import List, Optional
 from ..models.consulta import Consulta
 from .database_manager import DatabaseManager
+from datetime import datetime
 
 class ConsultaRepository:
     """Repository para operações com consultas"""
@@ -102,6 +103,19 @@ class ConsultaRepository:
         cursor.execute('SELECT COUNT(DISTINCT user_id) FROM consultas')
         usuarios_unicos = cursor.fetchone()[0]
         
+        # Consultas de hoje (formato brasileiro DD/MM/YYYY)
+        hoje_brasileiro = datetime.now().strftime('%d/%m/%Y')
+        cursor.execute('SELECT COUNT(*) FROM consultas WHERE data = ?', (hoje_brasileiro,))
+        consultas_hoje = cursor.fetchone()[0]
+        
+        # Consultas criadas hoje (timestamp)
+        hoje_inicio = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        cursor.execute('''
+            SELECT COUNT(*) FROM consultas 
+            WHERE datetime(data_criacao) >= datetime(?)
+        ''', (hoje_inicio.isoformat(),))
+        consultas_criadas_hoje = cursor.fetchone()[0]
+        
         # Últimas consultas
         cursor.execute('''
             SELECT nome, data, periodo, data_criacao 
@@ -125,5 +139,7 @@ class ConsultaRepository:
             'total_consultas': total_consultas,
             'consultas_por_periodo': por_periodo,
             'usuarios_unicos': usuarios_unicos,
+            'consultas_hoje': consultas_hoje,
+            'consultas_criadas_hoje': consultas_criadas_hoje,
             'ultimas_consultas': ultimas_consultas
         }
