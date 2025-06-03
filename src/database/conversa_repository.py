@@ -90,12 +90,21 @@ class ConversaRepository:
         
         historico = []
         for row in cursor.fetchall():
-            historico.append({
-                'mensagem_usuario': row[0],
-                'resposta_bot': row[1],
-                'estado': row[2],
-                'timestamp': row[3]
-            })
+            # Adiciona a mensagem do usuário
+            if row[0]:  # Se há mensagem do usuário
+                historico.append({
+                    'remetente': 'user',
+                    'mensagem': row[0],
+                    'timestamp': row[3]
+                })
+            
+            # Adiciona a resposta do bot
+            if row[1]:  # Se há resposta do bot
+                historico.append({
+                    'remetente': 'bot',
+                    'mensagem': row[1],
+                    'timestamp': row[3]
+                })
         
         conn.close()
         return historico
