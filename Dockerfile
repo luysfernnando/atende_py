@@ -1,5 +1,5 @@
 # Dockerfile multi-stage para produção (usado por Google, Amazon, etc.)
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 # Configurações básicas
 ENV PYTHONUNBUFFERED=1 \
@@ -13,14 +13,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Estágio de build
-FROM base as builder
+FROM base AS builder
 
 WORKDIR /build
 COPY requirements.txt pyproject.toml ./
 RUN pip install --user -r requirements.txt
 
 # Estágio de produção
-FROM base as production
+FROM base AS production
 
 # Cria usuário não-root para segurança
 RUN groupadd -r appuser && useradd -r -g appuser appuser
