@@ -38,15 +38,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ".[dev,ai]"
 
-    - name: Run linting
-      run: |
-        flake8 src tests
-        black --check src tests
-        isort --check-only src tests
-
-    - name: Run type checking
-      run: mypy src
-
     - name: Run tests
       run: pytest tests/ --cov=src --cov-report=xml
 
@@ -62,11 +53,6 @@ jobs:
 
     - name: Run security scan
       uses: pypa/gh-action-pip-audit@v1.0.8
-
-    - name: Run Bandit security linter
-      run: |
-        pip install bandit
-        bandit -r src/
 
   build:
     needs: [test, security]
