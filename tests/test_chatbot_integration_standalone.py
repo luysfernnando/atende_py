@@ -1,48 +1,77 @@
-# tests/test_chatbot_integration.py
+# tests/test_chatbot_integration_standalone.py
 """
-Testes de integração para o chatbot com nova arquitetura
-Testa o funcionamento completo do sistema end-to-end
+Testes de integração standalone que iniciam seu próprio servidor
+Ideal para CI/CD onde precisamos de controle total sobre o ambiente
 """
 
 import requests
 import unittest
+import threading
+import time
+import sys
+import os
 
-BASE_URL = "http://localhost:5000"
+# Adiciona o diretório pai ao path para importar o app
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-class TestChatbotIntegration(unittest.TestCase):
-    """Testes de integração para o chatbot"""
+from app import create_app
+
+BASE_URL = "http://localhost:5001"
+
+class TestChatbotIntegrationStandalone(unittest.TestCase):
+    """Testes de integração que iniciam seu próprio servidor Flask"""
     
     @classmethod
     def setUpClass(cls):
-        """Configuração inicial dos testes"""
-        cls.test_user_id = "test_user_integration"
+        """Inicia o servidor Flask em uma thread separada"""
+        cls.test_user_id = "test_user_standalone"
         cls.base_url = BASE_URL
+        cls.app = create_app()
+        cls.app.config['TESTING'] = True
+        
+        # Inicia o servidor em background
+        cls.server_thread = threading.Thread(
+            target=cls._run_server,
+            daemon=True
+        )
+        cls.server_thread.start()
+        
+        # Aguarda o servidor estar pronto
+        cls._wait_for_server()
+    
+    @classmethod
+    def _run_server(cls):
+        """Executa o servidor Flask"""
+        cls.app.run(host='127.0.0.1', port=5001, debug=False, use_reloader=False)
+    
+    @classmethod
+    def _wait_for_server(cls, max_attempts=30):
+        """Aguarda o servidor estar pronto"""
+        for attempt in range(max_attempts):
+            try:
+                response = requests.get(f"{cls.base_url}/health", timeout=1)
+                if response.status_code == 200:
+                    print(f"✅ Servidor pronto após {attempt + 1} tentativas")
+                    return
+            except Exception:
+                pass
+            time.sleep(0.5)
+        
+        raise Exception("❌ Servidor não ficou pronto a tempo")
     
     def test_01_health_check(self):
         """Testa se o servidor está funcionando"""
-        try:
-            response = requests.get(f"{self.base_url}/health", timeout=5)
-            self.assertEqual(response.status_code, 200)
-            data = response.json()
-            self.assertEqual(data['status'], 'ok')
-            print("✅ Health check OK")
-        except requests.exceptions.ConnectionError:
-            self.skipTest("⚠️ Servidor não está rodando. Use o teste standalone para CI/CD.")
-    
-    def setUp(self):
-        """Verifica se o servidor está disponível antes de cada teste"""
-        try:
-            response = requests.get(f"{self.base_url}/health", timeout=2)
-            if response.status_code != 200:
-                self.skipTest("⚠️ Servidor não está disponível")
-        except requests.exceptions.ConnectionError:
-            self.skipTest("⚠️ Servidor não está rodando. Use o teste standalone para CI/CD.")
+        response = requests.get(f"{self.base_url}/health", timeout=5)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['status'], 'ok')
+        print("✅ Health check OK")
     
     def test_02_fluxo_conversa_completo(self):
         """Testa o fluxo completo de uma conversa"""
         mensagens_e_respostas = [
             ("Olá", "Qual é o seu nome"),
-            ("João Teste", "Muito bem, João Teste"),
+            ("João Standalone", "Muito bem, João Standalone"),
             ("15/07/2025", "Perfeito! Data: 15/07/2025"),
             ("manhã", "Consulta marcada com sucesso")
         ]
@@ -117,41 +146,5 @@ class TestChatbotIntegration(unittest.TestCase):
         self.assertIn('user_id', status)
         print(f"✅ Status da conversa obtido: {status['estado']}")
 
-def run_manual_test():
-    """Executa testes manuais quando chamado diretamente"""
-    print("🏗️  TESTES DA ARQUITETURA REFATORADA")
-    print("=" * 50)
-    print("📋 Executando testes de integração...")
-    print()
-    
-    # Verifica se o servidor está rodando
-    try:
-        response = requests.get(f"{BASE_URL}/health", timeout=2)
-        if response.status_code != 200:
-            print("❌ Servidor não está respondendo corretamente")
-            return False
-    except Exception:
-        print("❌ Erro: Servidor não está rodando")
-        print("   Execute: python app.py")
-        return False
-    
-    # Executa os testes
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestChatbotIntegration)
-    runner = unittest.TextTestRunner(verbosity=2)
-    result = runner.run(suite)
-    
-    print("📊 RESULTADO DOS TESTES:")
-    print(f"✅ Sucessos: {result.testsRun - len(result.failures) - len(result.errors)}")
-    print(f"❌ Falhas: {len(result.failures)}")
-    print(f"🔥 Erros: {len(result.errors)}")
-    
-    if result.wasSuccessful():
-        print("🎉 TODOS OS TESTES PASSARAM!")
-        print("🏗️  Arquitetura SOLID + KISS validada!")
-        return True
-    else:
-        print("⚠️  Alguns testes falharam")
-        return False
-
 if __name__ == "__main__":
-    run_manual_test()
+    unittest.main(verbosity=2)

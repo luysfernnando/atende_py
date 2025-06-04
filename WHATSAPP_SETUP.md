@@ -167,8 +167,9 @@ Se o WhatsApp não estiver configurado:
 ## 🔄 Próximos passos
 
 Para expandir ainda mais:
-1. **ChatterBot**: Substituir AIService por ChatterBot para conversas mais complexas
-2. **Telegram**: Adicionar suporte a Telegram
-3. **OpenAI**: Integrar GPT para respostas mais inteligentes
-4. **Validações**: Adicionar validação de datas e horários
+1. **OpenAI**: Integrar GPT para respostas mais inteligentes
+2. **Telegram**: Adicionar suporte a Telegram  
+3. **Spacy/NLTK**: Para processamento de linguagem natural avançado
+4. **Validações**: Adicionar validação de datas e horários mais robusta
 5. **Notificações**: Enviar lembretes de consultas
+6. **Machine Learning**: Treinar modelos personalizados com histórico de conversas

@@ -45,8 +45,8 @@ dev = [
     "pre-commit>=3.0.0",
 ]
 ai = [
-    "chatterbot>=1.0.8",
-    "chatterbot-corpus>=1.2.0",
+    # ChatterBot removido por incompatibilidade com Python 3.9+
+    # Use AIService local para funcionalidade básica
     "nltk>=3.8.0",
 ]
 production = [
@@ -161,6 +161,5 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = [
     "twilio.*",
-    "chatterbot.*",
 ]
 ignore_missing_imports = true

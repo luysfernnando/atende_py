@@ -1,5 +1,3 @@
 Flask
 twilio
-chatterbot==1.0.8
-chatterbot-corpus
 python-dotenv
